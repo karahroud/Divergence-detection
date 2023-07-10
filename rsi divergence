@@ -1,0 +1,55 @@
+#property indicator_chart_window
+
+// تابع کنترل واگرایی
+bool CheckDivergence()
+{
+    int rsiPeriod = 14; // دوره محاسبه RSI
+    double upperThreshold = 70; // آستانه بالایی RSI برای واگرایی
+    double lowerThreshold = 30; // آستانه پایینی RSI برای واگرایی
+
+    // محاسبه RSI
+    double rsiBuffer[];
+    int copied = CopyBuffer(iRSI(_Symbol, PERIOD_D1, rsiPeriod, PRICE_CLOSE), 0, 0, rsiPeriod, rsiBuffer);
+
+    if (copied != rsiPeriod)
+        return false;
+
+    // چک کردن واگرایی
+    bool bullishDivergence = (rsiBuffer[2] > rsiBuffer[3] && rsiBuffer[1] > rsiBuffer[2] && rsiBuffer[0] < rsiBuffer[1]);
+    bool bearishDivergence = (rsiBuffer[2] < rsiBuffer[3] && rsiBuffer[1] < rsiBuffer[2] && rsiBuffer[0] > rsiBuffer[1]);
+
+    if (bullishDivergence)
+    {
+        // آلارم برای واگرایی صعودی
+        Alert("واگرایی صعودی شناسایی شد!");
+        return true;
+    }
+    else if (bearishDivergence)
+    {
+        // آلارم برای واگرایی نزولی
+        Alert("واگرایی نزولی شناسایی شد!");
+        return true;
+    }
+
+    return false;
+}
+
+// تابع اجرایی در زمان روزانه
+void OnTimer()
+{
+    if (CheckDivergence())
+    {
+        // عملیاتی که بعد از شناسایی واگرایی انجام می‌شود
+        // ...
+    }
+}
+
+// تابع اجرایی در زمان شروع Expert Advisor (EA)
+void OnStart()
+{
+    // تنظیم تایمر برای فراخوانی تابع OnTimer هر روز
+    int timeRemaining = TimeSeconds() % (24 * 60 * 60); // زمان باقی‌مانده تا نیمه شب
+    int timerInterval = 24 * 60 * 60; // یک روز (در ثانیه)
+    EventSetTimer(timerInterval - timeRemaining);
+}
+
