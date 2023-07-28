@@ -1,0 +1,62 @@
+#property indicator_chart_window
+#property indicator_buffers 2
+#property indicator_color1 Blue
+#property indicator_color2 Red
+
+input int rsi_period = 14;
+input double rsi_upper_threshold = 70.0;
+input double rsi_lower_threshold = 30.0;
+
+double rsi_buffer[];
+double alert_buffer[];
+
+void OnInit()
+{
+    SetIndexBuffer(0, rsi_buffer);
+    SetIndexBuffer(1, alert_buffer);
+    SetIndexStyle(0, DRAW_LINE);
+    SetIndexStyle(1, DRAW_ARROW);
+    SetIndexArrow(1, 234);
+    IndicatorSetString(INDICATOR_SHORTNAME, "RSI Alert");
+}
+
+void OnDeinit(const int reason)
+{
+    Comment("");
+}
+
+void OnCalculate(const int rates_total,
+                 const int prev_calculated,
+                 const datetime &time[],
+                 const double &open[],
+                 const double &high[],
+                 const double &low[],
+                 const double &close[],
+                 const long &tick_volume[],
+                 const long &volume[],
+                 const int &spread[])
+{
+    int limit = rates_total - prev_calculated;
+
+    ArraySetAsSeries(rsi_buffer, true);
+    ArraySetAsSeries(alert_buffer, true);
+
+    int counted_bars = IndicatorCounted();
+    if (counted_bars < 0)
+        return;
+    if (counted_bars > 0)
+        limit--;
+
+    for (int i = 0; i < limit; i++)
+    {
+        double rsi_value = iRSI(Symbol(), 0, rsi_period, PRICE_CLOSE, i + 1);
+        rsi_buffer[i] = rsi_value;
+
+        alert_buffer[i] = 0.0; // No alert by default
+
+        if (rsi_value > rsi_upper_threshold)
+            alert_buffer[i] = High[i] + (High[0] - Low[0]) * 0.1; // Show arrow above the candle
+        else if (rsi_value < rsi_lower_threshold)
+            alert_buffer[i] = Low[i] - (High[0] - Low[0]) * 0.1; // Show arrow below the candle
+    }
+}
